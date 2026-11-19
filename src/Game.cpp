@@ -3,6 +3,31 @@
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
+#include <termios.h>
+#include <unistd.h>
+
+// Читает одну клавишу без Enter (Linux).
+// 'a' — влево, 'd' — вправо, ' ' — выстрел, 'q' — выход, 0 — прочее
+static char readKey() {
+    termios oldt{}, newt{};
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+
+    char c = 0;
+    if (read(STDIN_FILENO, &c, 1) == 1 && c == '\033') {
+        char seq[2];
+        if (read(STDIN_FILENO, &seq[0], 1) == 1 &&
+            read(STDIN_FILENO, &seq[1], 1) == 1) {
+            if (seq[1] == 'D') c = 'a';       // Left
+            else if (seq[1] == 'C') c = 'd';  // Right
+            else c = 0;
+        }
+    }
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    return c;
+}
 
 Game::Game() {
     player_ = EntityFactory::createPlayer(GameField::W / 2, GameField::H - 1).release();
@@ -28,29 +53,32 @@ void Game::run() {
 }
 
 void Game::input() {
-    cout << "\n[a]left [d]right [s]shoot [q]quit > ";
-    char c; cin >> c;
-    if (c == 'a') player_->setX(max(0, player_->x() - 1));
-    else if (c == 'd') player_->setX(min(GameField::W - 1, player_->x() + 1));
-    else if (c == 's') {
-        entities_.push_back(EntityFactory::createBullet(player_->x(), player_->y() - 1,
-                                                        EntityType::PLAYER_BULLET).release());
+    cout << "\n[<-][->] move  [space] shoot  [q] quit > ";
+    cout.flush();
+
+    char c = readKey();
+    if (c == 'a') {
+        player_->setX(max(0, player_->x() - 1));
+    } else if (c == 'd') {
+        player_->setX(min(GameField::W - 1, player_->x() + 1));
+    } else if (c == ' ') {
+        entities_.push_back(EntityFactory::createBullet(
+            player_->x(), player_->y() - 1, EntityType::PLAYER_BULLET).release());
+    } else if (c == 'q') {
+        gameOn_ = false;
     }
-    else if (c == 'q') gameOn_ = false;
 }
 
 void Game::update() {
     ++turn_;
-    for (auto* e : entities_) if (e->alive()) e->update();// полиморфизм
+    for (auto* e : entities_) if (e->alive()) e->update();
     aliensShoot();
     handleCollisions();
 
-    //удаляем мёртвых и освобождаем память
     for (auto it = entities_.begin(); it != entities_.end(); ) {
         if (!(*it)->alive()) { delete *it; it = entities_.erase(it); }
         else ++it;
     }
-    // если игрок умер - тоже удалить и обнулить
     if (player_ && !player_->alive()) { player_ = nullptr; gameOn_ = false; }
 }
 
@@ -66,7 +94,6 @@ void Game::aliensShoot() {
 }
 
 void Game::handleCollisions() {
-    // пуля игрока -> пришелец
     for (auto* b : entities_) {
         if (!b->alive() || b->type() != EntityType::PLAYER_BULLET) continue;
         for (auto* a : entities_) {
@@ -78,7 +105,6 @@ void Game::handleCollisions() {
             }
         }
     }
-    // пуля пришельца -> игрок
     for (auto* b : entities_) {
         if (b->alive() && b->type() == EntityType::ALIEN_BULLET &&
             player_ && b->x() == player_->x() && b->y() == player_->y()) {
@@ -86,11 +112,9 @@ void Game::handleCollisions() {
             changeLives(-1, "You were shot!");
         }
     }
-    //пришелец дошёл до земли
     for (auto* a : entities_)
         if (!a->alive() && a->type() == EntityType::ALIEN && a->y() >= GameField::H - 1)
             changeLives(-1, "Alien reached the ground!");
-    //пришелец убил игрока
     for (auto* a : entities_)
         if (a->alive() && a->type() == EntityType::ALIEN && player_ &&
             a->x() == player_->x() && a->y() == player_->y()) {
@@ -117,7 +141,6 @@ void Game::draw() {
     for (auto& r : grid) cout << r << "\n";
     cout << "Lives: " << lives_ << " | Score: " << score_ << "\n";
 
-    //победа
     bool anyAlien = false;
     for (auto* e : entities_)
         if (e->alive() && e->type() == EntityType::ALIEN) { anyAlien = true; break; }

@@ -8,9 +8,9 @@ void LinearMovement::move(Entities& e, int, int h) {
 
 void AlienMovement::move(Entities& e, int w, int) {
     int nx = e.x() + int(e.direction()) * e.speed();
-    if (nx <= 0)               { e.setX(0);     e.setY(e.y() + 1); e.setDir(Direction::RIGHT); }
-    else if (nx >= w - 1)      { e.setX(w - 1); e.setY(e.y() + 1); e.setDir(Direction::LEFT);  }
-    else                       { e.setX(nx); }
+    if (nx <= 0)          { e.setX(0);     e.setY(e.y() + 1); e.setDir(Direction::RIGHT); }
+    else if (nx >= w - 1) { e.setX(w - 1); e.setY(e.y() + 1); e.setDir(Direction::LEFT);  }
+    else                  { e.setX(nx); }
 }
 
 Alien::Alien(int x, int y) : Entities(x, y, 'W', EntityType::ALIEN) {
@@ -20,7 +20,7 @@ Alien::Alien(int x, int y) : Entities(x, y, 'W', EntityType::ALIEN) {
 
 void Alien::update() {
     if (mv_) mv_->move(*this, GameField::W, GameField::H);
-    if (y_ >= GameField::H - 1) alive_ = false;   // дошёл до земли
+    if (y_ >= GameField::H - 1) alive_ = false;
 }
 
 Bullet::Bullet(int x, int y, EntityType t)

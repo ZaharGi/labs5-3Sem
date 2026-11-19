@@ -27,7 +27,7 @@ private:
     void handleCollisions();
     void changeLives(int delta, const string& reason);
 
-    list<Entities*> entities_;// требование задания
+    list<Entities*> entities_;
     Entities* player_ = nullptr;
     int lives_ = 3, score_ = 0, turn_ = 0;
     bool gameOn_ = true;

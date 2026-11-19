@@ -8,14 +8,14 @@ enum class EntityType { PLAYER, ALIEN, PLAYER_BULLET, ALIEN_BULLET };
 
 class Entities;
 
-//Strategy
+// ---------- Strategy ----------
 class IMovementStrategy {
 public:
     virtual ~IMovementStrategy() = default;
     virtual void move(Entities& e, int w, int h) = 0;
 };
 
-//Entities
+// ---------- Entities ----------
 class Entities {
 public:
     Entities(int x, int y, char sym, EntityType t, int sp = 1)
@@ -48,7 +48,7 @@ protected:
     unique_ptr<IMovementStrategy> mv_;
 };
 
-//Strategies
+// ---------- Strategies ----------
 class LinearMovement : public IMovementStrategy {
 public:
     void move(Entities& e, int, int h) override;
@@ -59,7 +59,7 @@ public:
     void move(Entities& e, int w, int) override;
 };
 
-// Concrete entities
+// ---------- Concrete entities ----------
 class Player : public Entities {
 public:
     Player(int x, int y) : Entities(x, y, 'A', EntityType::PLAYER) {}
@@ -78,7 +78,7 @@ public:
     void update() override;
 };
 
-//Factory Method
+// ---------- Factory Method ----------
 class EntityFactory {
 public:
     static unique_ptr<Entities> createPlayer(int x, int y);
