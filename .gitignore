@@ -1,0 +1,19 @@
+# Скомпилированные файлы
+*.o
+*.obj
+*.exe
+space_invaders
+
+# Папка сборки CMake
+build/
+cmake-build-*/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# ОС
+.DS_Store
+Thumbs.db
